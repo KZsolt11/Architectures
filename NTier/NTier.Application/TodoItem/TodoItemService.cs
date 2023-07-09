@@ -12,13 +12,20 @@ public class TodoItemService : ITodoItemService
 
 	public Task<List<Domain.Models.TodoItem>> GetAllAsync(TodoItemFilter filter)
 	{
-		return todoItemRepository.GetAllAsync(i =>
-			i.TodoList.Title.Contains(filter.FreeText) ||
-			i.Text.Contains(filter.FreeText));
+		return todoItemRepository
+			.GetAllAsync(i =>
+				string.IsNullOrEmpty(filter.FreeText) ||
+				i.TodoList.Title.Contains(filter.FreeText) ||
+				i.Text.Contains(filter.FreeText),
+			i => i.TodoList);
 	}
 
-	List<Domain.Models.TodoItem> ITodoItemService.GetAll(TodoItemFilter filter)
+	public List<Domain.Models.TodoItem> GetAll(TodoItemFilter filter)
 	{
-		throw new NotImplementedException();
+		return todoItemRepository.GetAll(i =>
+			string.IsNullOrEmpty(filter.FreeText) ||
+			i.TodoList.Title.Contains(filter.FreeText) ||
+			i.Text.Contains(filter.FreeText),
+			i => i.TodoList);
 	}
 }

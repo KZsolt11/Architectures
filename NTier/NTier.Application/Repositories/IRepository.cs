@@ -6,18 +6,13 @@ namespace NTier.Application.Repositories;
 public interface IRepository<TModel> where TModel : class
 {
 	public TModel GetById(int id);
-	public IQueryable<TModel> Query();
-	public IQueryable<TModel> Query(Expression<Func<TModel, bool>> expression);	
-	public List<TModel> GetAll();
-	public List<TModel> GetAll(Expression<Func<TModel, bool>> expression);
-	public TModel Add(TModel model);
-	public TModel Update(TModel model);
-	public void Delete(TModel model);
-
 	public Task<TModel> GetByIdAsync(int id);
-	public Task<List<TModel>> GetAllAsync();
-	public Task<List<TModel>> GetAllAsync(Expression<Func<TModel, bool>> expression);
+	public List<TModel> GetAll<TProperty>(Expression<Func<TModel, bool>> expression = null, params Expression<Func<TModel, TProperty>>[] includes);
+	public Task<List<TModel>> GetAllAsync<TProperty>(Expression<Func<TModel, bool>> expression = null, params Expression<Func<TModel, TProperty>>[] includes);
+	public TModel Add(TModel model);
 	public Task<TModel> AddAsync(TModel model);
+	public TModel Update(TModel model);
 	public Task<TModel> UpdateAsync(TModel model);
-	public Task DeleteAsync(TModel model);
+	public void Remove(TModel model);
+	public Task RemoveAsync(TModel model);
 }

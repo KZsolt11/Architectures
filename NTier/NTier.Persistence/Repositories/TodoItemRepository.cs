@@ -1,7 +1,11 @@
 ﻿using AutoMapper;
+using AutoMapper.QueryableExtensions;
+using Microsoft.EntityFrameworkCore;
 using NTier.Application.Repositories;
 using NTier.Domain.Models;
 using NTier.Persistence.Context;
+using System.Linq;
+using System.Linq.Expressions;
 
 namespace NTier.Persistence.Repositories;
 
@@ -10,14 +14,4 @@ public class TodoItemRepository : RepositoryBase<TodoItem, Entities.TodoItem>, I
 	public TodoItemRepository(DatabaseContext context, IMapper mapper) : base(context, mapper)
 	{
 	}
-
-	public List<TodoItem> GetByTitle(string title)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task<List<TodoItem>> GetByTitleAsync(string title)
-    {
-        throw new NotImplementedException();
-    }
 }

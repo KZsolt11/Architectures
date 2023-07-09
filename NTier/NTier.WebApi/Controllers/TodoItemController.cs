@@ -24,6 +24,7 @@ public class TodoItemController : ControllerBase
 	{
 		var items = await todoItemService
 			.GetAllAsync(filter);
+
 		return Ok(mapper.Map<List<TodoItemDto>>(items));
 	}
 }
