@@ -8,6 +8,6 @@ public class TodoListMapper : Profile
 	public TodoListMapper()
 	{
 		CreateMap<TodoList, Entities.TodoList>();
-		CreateMap<Entities.TodoList, TodoList>();
+		CreateMap<Entities.TodoList, TodoList>();		
 	}
 }

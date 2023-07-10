@@ -1,4 +1,6 @@
 ﻿using AutoMapper;
+using AutoMapper.Extensions.ExpressionMapping;
+using AutoMapper.Internal;
 using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Query;
@@ -7,6 +9,9 @@ using NTier.Domain.Models;
 using NTier.Persistence.Context;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
+using System.Reflection.Metadata.Ecma335;
+using System.Runtime.CompilerServices;
 
 namespace NTier.Persistence.Repositories;
 public class RepositoryBase<TModel, TEntity> : IRepository<TModel>
@@ -102,5 +107,53 @@ public class RepositoryBase<TModel, TEntity> : IRepository<TModel>
 	public virtual Task RemoveAsync(TModel model)
 	{
 		throw new NotImplementedException();
+	}
+	public void Test(Action<IQueryOption<TModel>> options = null)
+	{
+		var queryOption = new QueryOption<TEntity, TModel>(mapper, dbSet.AsQueryable());
+		options(queryOption);
+
+		var entities = queryOption.Query.ToList();
+		Console.WriteLine(entities.Count);
+	}
+}
+
+public class QueryOption<TEntity, TModel> : IQueryOption<TModel>
+	where TEntity : class
+{
+	private readonly IMapper mapper;
+	public IQueryable<TEntity> Query { get; private set; }
+	public QueryOption(IMapper mapper, IQueryable<TEntity> query)
+	{
+		this.mapper = mapper;
+		Query = query;
+	}
+
+	public IQueryOption<TModel> Include<TProperty>(Expression<Func<TModel, TProperty>> expression)
+		where TProperty : class
+	{
+		var exp = mapper.Map<Expression<Func<TEntity, object>>>(expression);
+		var includeDestType = (exp.Body as UnaryExpression).Operand.Type;
+
+		MethodInfo mapMethod = mapper.GetType().GetMethods().FirstOrDefault(m =>
+			m.Name == nameof(mapper.Map) &&
+			m.ContainsGenericParameters &&
+			m.GetGenericArguments().Count() == 2 &&
+			m.GetParameters().Length == 1);
+
+		var destType = typeof(Expression<>).MakeGenericType(Expression.GetFuncType(typeof(TEntity), includeDestType));
+
+		MethodInfo genericMapMethod = mapMethod.MakeGenericMethod(typeof(Expression<Func<TModel, TProperty>>), destType);
+
+		var mappedExpression = genericMapMethod.Invoke(mapper, new object[] { expression });
+
+		var includeMethod = typeof(EntityFrameworkQueryableExtensions).GetMethods()
+			.FirstOrDefault(m => m.Name == nameof(EntityFrameworkQueryableExtensions.Include) &&
+			m.GetParameters().Count() == 2);
+
+		MethodInfo genericInclude = includeMethod.MakeGenericMethod(typeof(TEntity), includeDestType);
+
+		Query = genericInclude.Invoke(null, new object[] { Query, mappedExpression }) as IQueryable<TEntity>;
+		return this;
 	}
 }

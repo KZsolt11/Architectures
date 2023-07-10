@@ -14,6 +14,6 @@ public class TodoListService : ITodoListService
 	}
 	public Task<List<Domain.Models.TodoList>> GetAllAsync()
 	{
-		return todoListRepository.GetAllAsync();
+		throw new NotImplementedException();
 	}
 }

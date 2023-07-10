@@ -12,6 +12,9 @@ public class TodoItemService : ITodoItemService
 
 	public Task<List<Domain.Models.TodoItem>> GetAllAsync(TodoItemFilter filter)
 	{
+		todoItemRepository.Test(o =>
+			o.Include(t => t.TodoList)
+			);
 		return todoItemRepository
 			.GetAllAsync(i =>
 				string.IsNullOrEmpty(filter.FreeText) ||

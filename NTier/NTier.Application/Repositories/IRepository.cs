@@ -15,4 +15,11 @@ public interface IRepository<TModel> where TModel : class
 	public Task<TModel> UpdateAsync(TModel model);
 	public void Remove(TModel model);
 	public Task RemoveAsync(TModel model);
+	public void Test(Action<IQueryOption<TModel>> options);
+}
+
+public interface IQueryOption<TModel>
+{
+	IQueryOption<TModel> Include<TProperty>(Expression<Func<TModel,TProperty>> expression) 
+		where TProperty: class;
 }
