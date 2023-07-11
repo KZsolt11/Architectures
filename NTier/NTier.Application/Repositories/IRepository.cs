@@ -18,8 +18,30 @@ public interface IRepository<TModel> where TModel : class
 	public void Test(Action<IQueryOption<TModel>> options);
 }
 
-public interface IQueryOption<TModel>
+//public interface IQueryOption<TModel>
+//{
+//	IIncludable<TModel, TProperty> Include<TProperty>(Expression<Func<TModel, TProperty>> expression) 
+//		where TProperty: class;
+//}
+
+//public interface IIncludable<TModel, TIncluded> : IQueryOption<TModel>
+//{
+//	IIncludable<TModel, TProperty> ThenInclude<TProperty>(Expression<Func<TIncluded, TProperty>> expression);
+//}
+
+public interface IQueryOption<TEntity>
 {
-	IQueryOption<TModel> Include<TProperty>(Expression<Func<TModel,TProperty>> expression) 
-		where TProperty: class;
+	IIncludableQueryOption<TEntity, TProperty> Include<TProperty>(
+		Expression<Func<TEntity, TProperty>> navigationPropertyPath);
+	IIncludableQueryOption<TEntity, TProperty> IncludeCollection<TProperty>(
+		Expression<Func<TEntity, ICollection<TProperty>>> navigationPropertyPath);
+}
+
+public interface IIncludableQueryOption<TEntity, TPreviousProperty>: IQueryOption<TEntity>
+{
+	IIncludableQueryOption<TEntity, TProperty> ThenInclude<TProperty>(
+			Expression<Func<TPreviousProperty, TProperty>> navigationPropertyPath);
+
+	IIncludableQueryOption<TEntity, TProperty> ThenIncludeCollection<TProperty>(
+			Expression<Func<TPreviousProperty, ICollection<TProperty>>> navigationPropertyPath);
 }
