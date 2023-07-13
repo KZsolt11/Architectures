@@ -1,20 +1,7 @@
 ﻿using AutoMapper;
-using AutoMapper.Extensions.ExpressionMapping;
-using AutoMapper.Internal;
-using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Conventions;
-using Microsoft.EntityFrameworkCore.Query;
-using Microsoft.EntityFrameworkCore.Query.SqlExpressions;
 using NTier.Application.Repositories;
-using NTier.Domain.Models;
 using NTier.Persistence.Context;
-using System.Collections;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Reflection;
-using System.Reflection.Metadata.Ecma335;
-using System.Runtime.CompilerServices;
 
 namespace NTier.Persistence.Repositories;
 public class RepositoryBase<TModel, TEntity> : IRepository<TModel>
@@ -40,46 +27,6 @@ public class RepositoryBase<TModel, TEntity> : IRepository<TModel>
 	public virtual Task<TModel> GetByIdAsync(int id)
 	{
 		throw new NotImplementedException();
-	}
-
-	public virtual List<TModel> GetAll<TProperty>(Expression<Func<TModel, bool>> expression = null, params Expression<Func<TModel, TProperty>>[] includes)
-	{
-		var query = dbSet.AsQueryable();
-
-		if (includes != null)
-		{
-			foreach (var include in includes)
-			{
-				query = query.Include(mapper.Map<Expression<Func<TEntity, TProperty>>>(include));
-			}
-		}
-
-		if (expression != null)
-		{
-			query = query.Where(mapper.Map<Expression<Func<TEntity, bool>>>(expression));
-		}
-
-		return mapper.Map<List<TModel>>(query.ToList());
-	}
-
-	public virtual async Task<List<TModel>> GetAllAsync<TProperty>(Expression<Func<TModel, bool>> expression = null, params Expression<Func<TModel, TProperty>>[] includes)
-	{
-		var query = dbSet.AsQueryable();
-
-		if (includes != null)
-		{
-			foreach (var include in includes)
-			{
-				query = query.Include(mapper.Map<Expression<Func<TEntity, TProperty>>>(include));
-			}
-		}
-
-		if (expression != null)
-		{
-			query = query.Where(mapper.Map<Expression<Func<TEntity, bool>>>(expression));
-		}
-
-		return mapper.Map<List<TModel>>(await query.ToListAsync());
 	}
 
 	public virtual TModel Add(TModel model)
@@ -111,145 +58,43 @@ public class RepositoryBase<TModel, TEntity> : IRepository<TModel>
 	{
 		throw new NotImplementedException();
 	}
-	public void Test(Action<IQueryOption<TModel>> options = null)
+
+	public List<TModel> GetAll(Action<IQueryOption<TModel>> queryOptions = null)
 	{
+		return ApplyQueryOptions(queryOptions)
+			.ToList()
+			.Select(e => mapper.Map<TModel>(e))
+			.ToList();
+	}
+
+	public async Task<List<TModel>> GetAllAsync(Action<IQueryOption<TModel>> queryOptions = null)
+	{
+		return (await ApplyQueryOptions(queryOptions).ToListAsync())
+			.Select(e => mapper.Map<TModel>(e))
+			.ToList();
+	}
+
+	public TModel FirstOrDefault(Action<IQueryOption<TModel>> queryOptions = null)
+	{
+		var entity = ApplyQueryOptions(queryOptions)
+			.FirstOrDefault();
+		return mapper.Map<TModel>(entity);
+	}
+
+	public async Task<TModel> FirstOrDefaultAsync(Action<IQueryOption<TModel>> queryOptions = null)
+	{
+		var entity = await ApplyQueryOptions(queryOptions)
+			.FirstOrDefaultAsync();
+		return mapper.Map<TModel>(entity);
+	}
+	private IQueryable<TEntity> ApplyQueryOptions(Action<IQueryOption<TModel>> options = null)
+	{
+		if (options == null)
+			return dbSet.AsQueryable();
+
 		var queryOption = new QueryOption<TEntity, TModel>(mapper, dbSet.AsQueryable());
 		options(queryOption);
 
-		var entities = queryOption.Query.ToList();
-		Console.WriteLine(entities.Count);
-	}
-}
-
-public class QueryOption<TEntity, TModel> : IQueryOption<TModel>
-	where TEntity : class
-{
-	protected string CurrentNavigationPath;
-	protected Type CurrentType;
-
-	protected readonly IMapper mapper;
-	public IQueryable<TEntity> Query { get; protected set; }
-	public QueryOption(IMapper mapper, IQueryable<TEntity> query)
-	{
-		this.mapper = mapper;
-		Query = query;
-	}
-
-	public IIncludableQueryOption<TModel, TProperty> Include<TProperty>(Expression<Func<TModel, TProperty>> expression)
-	{
-		(CurrentType, CurrentNavigationPath) = QueryOptionHelper.GetMappedProperty(typeof(TModel), typeof(TEntity), mapper, expression);
-		
-		Query = Query.Include(CurrentNavigationPath);
-
-		return new IncludableQueryOption<TEntity, TModel, TProperty>(mapper, Query, CurrentNavigationPath, CurrentType);
-	}
-
-	public IIncludableQueryOption<TModel, TProperty> IncludeCollection<TProperty>(Expression<Func<TModel, ICollection<TProperty>>> navigationPropertyPath)
-	{
-		throw new NotImplementedException();
-	}
-
-	private IQueryOption<TModel> IncludeWithReflection<TProperty>(Expression<Func<TModel, TProperty>> expression)
-	where TProperty : class
-	{
-		var exp = mapper.Map<Expression<Func<TEntity, object>>>(expression);
-		var includeDestType = (exp.Body as UnaryExpression).Operand.Type;
-
-		MethodInfo mapMethod = mapper.GetType().GetMethods().FirstOrDefault(m =>
-			m.Name == nameof(mapper.Map) &&
-			m.ContainsGenericParameters &&
-			m.GetGenericArguments().Count() == 2 &&
-			m.GetParameters().Length == 1);
-
-		var destType = typeof(Expression<>).MakeGenericType(Expression.GetFuncType(typeof(TEntity), includeDestType));
-
-		MethodInfo genericMapMethod = mapMethod.MakeGenericMethod(typeof(Expression<Func<TModel, TProperty>>), destType);
-
-		var mappedExpression = genericMapMethod.Invoke(mapper, new object[] { expression });
-
-		var includeMethod = typeof(EntityFrameworkQueryableExtensions).GetMethods()
-			.FirstOrDefault(m => m.Name == nameof(EntityFrameworkQueryableExtensions.Include) &&
-			m.GetParameters().Count() == 2);
-
-		MethodInfo genericInclude = includeMethod.MakeGenericMethod(typeof(TEntity), includeDestType);
-
-		Query = genericInclude.Invoke(null, new object[] { Query, mappedExpression }) as IQueryable<TEntity>;
-		return this;
-	}
-
-}
-
-public class IncludableQueryOption<TEntity, TModel, TIncluded> : QueryOption<TEntity, TModel>, IIncludableQueryOption<TModel, TIncluded>
-	where TEntity : class
-{
-	public IncludableQueryOption(IMapper mapper, IQueryable<TEntity> query, string currentNavigationPath, Type currentType) : base(mapper, query)
-	{
-		CurrentNavigationPath = currentNavigationPath;
-		CurrentType = currentType;
-	}
-
-	public IncludableQueryOption(IMapper mapper, IQueryable<TEntity> query) : base(mapper, query)
-	{
-	}
-
-	public IIncludableQueryOption<TModel, TProperty> ThenInclude<TProperty>(Expression<Func<TIncluded, TProperty>> navigationPropertyPath)
-	{
-		var (type, name) = QueryOptionHelper.GetMappedProperty(typeof(TIncluded), CurrentType, mapper, navigationPropertyPath);
-		CurrentType = type;
-		CurrentNavigationPath = $"{CurrentNavigationPath}.{name}";
-		
-		Query = Query.Include(CurrentNavigationPath);
-
-		return new IncludableQueryOption<TEntity, TModel, TProperty>(mapper, Query, CurrentNavigationPath, CurrentType);
-	}
-
-	public IIncludableQueryOption<TModel, TProperty> ThenIncludeCollection<TProperty>(Expression<Func<TIncluded, ICollection<TProperty>>> navigationPropertyPath)
-	{
-		throw new NotImplementedException();
-	}
-}
-
-public static class QueryOptionHelper
-{
-	public static (Type, string) GetMappedProperty(Type src, Type dest, IMapper mapper, LambdaExpression expression)
-	{
-		var includePropertyInfo = GetPropertyInfo(src, expression);
-		return GetDestProperty(src, dest, includePropertyInfo, mapper);
-	}
-
-	public static (Type, string) GetDestProperty(Type src, Type dest, PropertyInfo propertyInfo, IMapper mapper)
-	{
-		var map = mapper.ConfigurationProvider.Internal().FindTypeMapFor(src, dest);
-		var propertyMap = map.PropertyMaps.FirstOrDefault(pm => pm.SourceType == propertyInfo.PropertyType && pm.SourceMember.Name == propertyInfo.Name);
-		if (propertyMap == null)
-			throw new ArgumentException($"No property mapping for: {propertyInfo.Name} {propertyInfo.DeclaringType}");
-		return (propertyMap.DestinationType, propertyMap.DestinationName);
-	}
-
-	public static PropertyInfo GetPropertyInfo(Type source, LambdaExpression propertyLambda)
-	{
-		if (propertyLambda.Body is not MemberExpression member)
-		{
-			throw new ArgumentException(string.Format(
-				"Expression '{0}' refers to a method, not a property.",
-				propertyLambda.ToString()));
-		}
-
-		if (member.Member is not PropertyInfo propInfo)
-		{
-			throw new ArgumentException(string.Format(
-				"Expression '{0}' refers to a field, not a property.",
-				propertyLambda.ToString()));
-		}
-
-		if (propInfo.ReflectedType != null && source != propInfo.ReflectedType && !source.IsSubclassOf(propInfo.ReflectedType))
-		{
-			throw new ArgumentException(string.Format(
-				"Expression '{0}' refers to a property that is not from type {1}.",
-				propertyLambda.ToString(),
-				source));
-		}
-
-		return propInfo;
+		return queryOption.Query;
 	}
 }
