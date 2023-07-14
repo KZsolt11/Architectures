@@ -15,8 +15,8 @@ public class TodoItemService : ITodoItemService
 		return todoItemRepository
 			.GetAllAsync(o => o
 				.Include(e => e.TodoList)
-				.Where(e => e.Text.Contains(filter.FreeText))
-				.Take(10));
+				.ThenInclude(e => e.Owner)
+				.Where(e => string.IsNullOrEmpty(filter.FreeText) || e.Text.Contains(filter.FreeText)));
 	}
 
 	public List<Domain.Models.TodoItem> GetAll(TodoItemFilter filter)

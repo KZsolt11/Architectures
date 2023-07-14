@@ -21,6 +21,7 @@ namespace NTier.Persistence.Context
 
         public virtual DbSet<TodoItem> TodoItems { get; set; }
         public virtual DbSet<TodoList> TodoLists { get; set; }
+        public virtual DbSet<User> Users { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -86,10 +87,52 @@ namespace NTier.Persistence.Context
                     .HasColumnType("datetime")
                     .HasColumnName("modified_date");
 
+                entity.Property(e => e.OwnerId).HasColumnName("owner_id");
+
                 entity.Property(e => e.Title)
                     .IsRequired()
                     .HasMaxLength(200)
                     .HasColumnName("title");
+
+                entity.HasOne(d => d.Owner)
+                    .WithMany(p => p.TodoLists)
+                    .HasForeignKey(d => d.OwnerId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("fk_todo_list_user");
+            });
+
+            modelBuilder.Entity<User>(entity =>
+            {
+                entity.ToTable("user");
+
+                entity.Property(e => e.Id).HasColumnName("id");
+
+                entity.Property(e => e.CreatedBy)
+                    .IsRequired()
+                    .HasMaxLength(100)
+                    .HasColumnName("created_by");
+
+                entity.Property(e => e.CreatedDate)
+                    .HasColumnType("datetime")
+                    .HasColumnName("created_date");
+
+                entity.Property(e => e.Email)
+                    .IsRequired()
+                    .HasMaxLength(200)
+                    .HasColumnName("email");
+
+                entity.Property(e => e.ModifiedBy)
+                    .HasMaxLength(100)
+                    .HasColumnName("modified_by");
+
+                entity.Property(e => e.ModifiedDate)
+                    .HasColumnType("datetime")
+                    .HasColumnName("modified_date");
+
+                entity.Property(e => e.Name)
+                    .IsRequired()
+                    .HasMaxLength(200)
+                    .HasColumnName("name");
             });
 
             OnModelCreatingPartial(modelBuilder);

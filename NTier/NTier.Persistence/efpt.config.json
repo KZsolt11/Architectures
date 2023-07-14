@@ -21,6 +21,10 @@
       {
          "Name": "[dbo].[todo_list]",
          "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[user]",
+         "ObjectType": 0
       }
    ],
    "UiHint": "..\\NTier.Persistence.Database\\NTier.Persistence.Database.sqlproj",

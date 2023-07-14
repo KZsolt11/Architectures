@@ -5,22 +5,21 @@ using System.Collections.Generic;
 
 namespace NTier.Persistence.Entities
 {
-    public partial class TodoList
+    public partial class User
     {
-        public TodoList()
+        public User()
         {
-            TodoItems = new HashSet<TodoItem>();
+            TodoLists = new HashSet<TodoList>();
         }
 
         public int Id { get; set; }
-        public string Title { get; set; }
+        public string Name { get; set; }
+        public string Email { get; set; }
         public DateTime CreatedDate { get; set; }
         public string CreatedBy { get; set; }
         public DateTime? ModifiedDate { get; set; }
         public string ModifiedBy { get; set; }
-        public int OwnerId { get; set; }
 
-        public virtual User Owner { get; set; }
-        public virtual ICollection<TodoItem> TodoItems { get; set; }
+        public virtual ICollection<TodoList> TodoLists { get; set; }
     }
 }

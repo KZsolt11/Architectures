@@ -8,5 +8,6 @@ public class TodoList : IAuditable
     public string CreatedBy { get; set; }
     public DateTime? ModifiedDate { get; set; }
     public string ModifiedBy { get; set; }
-    public List<TodoItem> TodoItems { get; set; } = new List<TodoItem>();
+	public User Owner { get; set; }
+	public List<TodoItem> TodoItems { get; set; } = new List<TodoItem>();
 }

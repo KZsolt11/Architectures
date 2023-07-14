@@ -13,10 +13,5 @@ public class TodoItemRepository : RepositoryBase<TodoItem, Entities.TodoItem>, I
 {
 	public TodoItemRepository(DatabaseContext context, IMapper mapper) : base(context, mapper)
 	{
-		dbSet
-			.Include(x => x.TodoList)
-			.ThenInclude(x => x.TodoItems)
-			.ThenInclude(x => x.TodoList);
-			
 	}
 }

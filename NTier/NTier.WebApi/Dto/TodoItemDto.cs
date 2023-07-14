@@ -9,6 +9,7 @@ namespace NTier.WebApi.Dto
 		public string Text { get; set; }
 		public int TodoListId { get; set; }
 		public string TodoListTitle { get; set; }
+		public string TodoListOwner { get; set; }
 	}
 
 	public class TodoItemDtoMapper : Profile
@@ -17,7 +18,8 @@ namespace NTier.WebApi.Dto
 		{
 			CreateMap<TodoItem, TodoItemDto>()
 				.ForMember(dest => dest.TodoListId, opt => opt.MapFrom(src => src.TodoList.Id))
-				.ForMember(dest => dest.TodoListTitle, opt => opt.MapFrom(src => src.TodoList.Title));
+				.ForMember(dest => dest.TodoListTitle, opt => opt.MapFrom(src => src.TodoList.Title))
+				.ForMember(dest => dest.TodoListOwner, opt => opt.MapFrom(src => src.TodoList.Owner.Name));
 		}
 	}
 }

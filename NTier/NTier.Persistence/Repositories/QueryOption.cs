@@ -2,9 +2,18 @@
 using Microsoft.EntityFrameworkCore;
 using NTier.Application.Repositories;
 using System.Linq.Expressions;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace NTier.Persistence.Repositories;
+public class QueryContainer<TEntity>
+{
+	public QueryContainer(IQueryable<TEntity> query)
+	{
+		Query = query;
+	}
 
+	public IQueryable<TEntity> Query { get; set; }
+}
 public class QueryOption<TEntity, TModel> : IQueryOption<TModel>
 	where TEntity : class
 {
@@ -12,49 +21,54 @@ public class QueryOption<TEntity, TModel> : IQueryOption<TModel>
 	protected Type CurrentType;
 
 	protected readonly IMapper mapper;
-	public IQueryable<TEntity> Query { get; protected set; }
+	public QueryContainer<TEntity> QueryContainer { get; set; }
+	public QueryOption(IMapper mapper, QueryContainer<TEntity> queryContainer)
+	{
+		this.mapper = mapper;
+		QueryContainer = queryContainer;
+	}
 	public QueryOption(IMapper mapper, IQueryable<TEntity> query)
 	{
 		this.mapper = mapper;
-		Query = query;
+		QueryContainer = new QueryContainer<TEntity>(query);
 	}
 
 	public IIncludableQueryOption<TModel, TProperty> Include<TProperty>(Expression<Func<TModel, TProperty>> expression)
 	{
 		(CurrentType, CurrentNavigationPath) = QueryOptionHelper.GetMappedProperty(typeof(TModel), typeof(TEntity), mapper, expression);
-		
-		Query = Query.Include(CurrentNavigationPath);
 
-		return new IncludableQueryOption<TEntity, TModel, TProperty>(mapper, Query, CurrentNavigationPath, CurrentType);
+		QueryContainer.Query = QueryContainer.Query.Include(CurrentNavigationPath);
+
+		return new IncludableQueryOption<TEntity, TModel, TProperty>(mapper, QueryContainer, CurrentNavigationPath, CurrentType);
 	}
 
 	public IIncludableQueryOption<TModel, TProperty> IncludeCollection<TProperty>(Expression<Func<TModel, ICollection<TProperty>>> expression)
 	{
 		(CurrentType, CurrentNavigationPath) = QueryOptionHelper.GetMappedProperty(typeof(TModel), typeof(TEntity), mapper, expression);
 
-		Query = Query.Include(CurrentNavigationPath);
+		QueryContainer.Query = QueryContainer.Query.Include(CurrentNavigationPath);
 
-		return new IncludableQueryOption<TEntity, TModel, TProperty>(mapper, Query, CurrentNavigationPath, CurrentType);
+		return new IncludableQueryOption<TEntity, TModel, TProperty>(mapper, QueryContainer, CurrentNavigationPath, CurrentType);
 	}
-	
+
 	public IQueryOption<TModel> Where(Expression<Func<TModel, bool>> expression)
 	{
 		ResetIncludeNavigationPath();
-		Query = Query.Where(mapper.Map<Expression<Func<TEntity, bool>>>(expression));
+		QueryContainer.Query = QueryContainer.Query.Where(mapper.Map<Expression<Func<TEntity, bool>>>(expression));
 		return this;
 	}
 
 	public IQueryOption<TModel> Skip(int count)
 	{
 		ResetIncludeNavigationPath();
-		Query = Query.Skip(count);
+		QueryContainer.Query = QueryContainer.Query.Skip(count);
 		return this;
 	}
 
 	public IQueryOption<TModel> Take(int count)
 	{
 		ResetIncludeNavigationPath();
-		Query = Query.Take(count);
+		QueryContainer.Query = QueryContainer.Query.Take(count);
 		return this;
 	}
 

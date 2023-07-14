@@ -66,4 +66,7 @@
   <ItemGroup>
     <Build Include="dbo\tables\todo_item.sql" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="NTier.Persistence.Database.publish.xml" />
+  </ItemGroup>
 </Project>

@@ -59,7 +59,7 @@ public class RepositoryBase<TModel, TEntity> : IRepository<TModel>
 		throw new NotImplementedException();
 	}
 
-	public List<TModel> GetAll(Action<IQueryOption<TModel>> queryOptions = null)
+	public virtual List<TModel> GetAll(Action<IQueryOption<TModel>> queryOptions = null)
 	{
 		return ApplyQueryOptions(queryOptions)
 			.ToList()
@@ -67,21 +67,21 @@ public class RepositoryBase<TModel, TEntity> : IRepository<TModel>
 			.ToList();
 	}
 
-	public async Task<List<TModel>> GetAllAsync(Action<IQueryOption<TModel>> queryOptions = null)
+	public virtual async Task<List<TModel>> GetAllAsync(Action<IQueryOption<TModel>> queryOptions = null)
 	{
-		return (await ApplyQueryOptions(queryOptions).ToListAsync())
-			.Select(e => mapper.Map<TModel>(e))
+		var entities = (await ApplyQueryOptions(queryOptions).ToListAsync());
+		return entities.Select(e => mapper.Map<TModel>(e))
 			.ToList();
 	}
 
-	public TModel FirstOrDefault(Action<IQueryOption<TModel>> queryOptions = null)
+	public virtual TModel FirstOrDefault(Action<IQueryOption<TModel>> queryOptions = null)
 	{
 		var entity = ApplyQueryOptions(queryOptions)
 			.FirstOrDefault();
 		return mapper.Map<TModel>(entity);
 	}
 
-	public async Task<TModel> FirstOrDefaultAsync(Action<IQueryOption<TModel>> queryOptions = null)
+	public virtual async Task<TModel> FirstOrDefaultAsync(Action<IQueryOption<TModel>> queryOptions = null)
 	{
 		var entity = await ApplyQueryOptions(queryOptions)
 			.FirstOrDefaultAsync();
@@ -95,6 +95,6 @@ public class RepositoryBase<TModel, TEntity> : IRepository<TModel>
 		var queryOption = new QueryOption<TEntity, TModel>(mapper, dbSet.AsQueryable());
 		options(queryOption);
 
-		return queryOption.Query;
+		return queryOption.QueryContainer.Query;
 	}
 }

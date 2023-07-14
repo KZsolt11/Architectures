@@ -8,7 +8,7 @@ namespace NTier.Persistence.Repositories;
 public class IncludableQueryOption<TEntity, TModel, TIncluded> : QueryOption<TEntity, TModel>, IIncludableQueryOption<TModel, TIncluded>
 	where TEntity : class
 {
-	public IncludableQueryOption(IMapper mapper, IQueryable<TEntity> query, string currentNavigationPath, Type currentType) : base(mapper, query)
+	public IncludableQueryOption(IMapper mapper, QueryContainer<TEntity> queryContainer, string currentNavigationPath, Type currentType) : base(mapper, queryContainer)
 	{
 		CurrentNavigationPath = currentNavigationPath;
 		CurrentType = currentType;
@@ -23,10 +23,10 @@ public class IncludableQueryOption<TEntity, TModel, TIncluded> : QueryOption<TEn
 		var (type, name) = QueryOptionHelper.GetMappedProperty(typeof(TIncluded), CurrentType, mapper, navigationPropertyPath);
 		CurrentType = type;
 		CurrentNavigationPath = $"{CurrentNavigationPath}.{name}";
-		
-		Query = Query.Include(CurrentNavigationPath);
 
-		return new IncludableQueryOption<TEntity, TModel, TProperty>(mapper, Query, CurrentNavigationPath, CurrentType);
+		QueryContainer.Query = QueryContainer.Query.Include(CurrentNavigationPath);
+
+		return new IncludableQueryOption<TEntity, TModel, TProperty>(mapper, QueryContainer, CurrentNavigationPath, CurrentType);
 	}
 
 	public IIncludableQueryOption<TModel, TProperty> ThenIncludeCollection<TProperty>(Expression<Func<TIncluded, ICollection<TProperty>>> navigationPropertyPath)
